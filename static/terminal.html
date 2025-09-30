@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>System Terminal Pro</title>
+  <style>
+    :root {
+      --background: #1a1b26;
+      --surface: #24283b;
+      --primary: #7aa2f7;
+      --success: #9ece6a;
+      --error: #f7768e;
+      --warning: #e0af68;
+      --text: #c0caf5;
+      --text-secondary: #565f89;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--background);
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .terminal {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--background);
+    }
+
+    .terminal-header {
+      background: var(--surface);
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid #2a2e3e;
+    }
+
+    .terminal-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .terminal-button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .close { background: #f7768e; }
+    .minimize { background: #e0af68; }
+    .maximize { background: #9ece6a; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .terminal-body {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #output {
+      flex: 1;
+      margin-bottom: 1rem;
+    }
+
+    .input-line {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .prompt {
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .hostname {
+      color: var(--success);
+    }
+
+    .path {
+      color: var(--warning);
+    }
+
+    #command {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: inherit;
+      outline: none;
+      caret-color: var(--primary);
+    }
+
+    .line {
+      margin-bottom: 0.5rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .command-line {
+      color: var(--text);
+    }
+
+    .output-line {
+      color: var(--text);
+    }
+
+    .error { color: var(--error); }
+    .success { color: var(--success); }
+    .warning { color: var(--warning); }
+    .info { color: var(--primary); }
+
+    .system-info {
+      background: var(--surface);
+      border: 1px solid #2a2e3e;
+      border-radius: 4px;
+      padding: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .system-info h3 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-message {
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--surface);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--text-secondary);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text);
+    }
+
+    /* Blinking cursor */
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 1.2em;
+      background: var(--primary);
+      margin-left: 2px;
+      animation: blink 1s infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="terminal-buttons">
+        <div class="terminal-button close"></div>
+        <div class="terminal-button minimize"></div>
+        <div class="terminal-button maximize"></div>
+      </div>
+      <div class="terminal-title">System Terminal Pro</div>
+    </div>
+    
+    <div class="terminal-body">
+      <div id="output">
+        <div class="welcome-message">
+          System Terminal Pro v2.0.0<br>
+          Type 'help' for available commands
+        </div>
+      </div>
+      
+      <div class="input-line">
+        <span class="prompt">
+          <span class="hostname">user@miku-browser</span>:<span class="path">~</span>$
+        </span>
+        <input type="text" id="command" autocomplete="off" spellcheck="false">
+        <span class="cursor"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const output = document.getElementById("output");
+    const commandInput = document.getElementById("command");
+    let commandHistory = [];
+    let historyIndex = -1;
+
+    // Available commands
+    const commands = {
+      help: () => `
+Available commands:
+• help - Show this help message
+• system_info - Display system information
+• network_info - Show network status
+• clear - Clear terminal screen
+• date - Show current date and time
+• echo [text] - Echo the provided text
+      `,
+
+      system_info: () => {
+        const memory = performance.memory;
+        return `
+System Information:
+├── Platform: ${navigator.platform}
+├── User Agent: ${navigator.userAgent.split(' ').slice(0, 4).join(' ')}...
+├── Language: ${navigator.language}
+├── CPU Cores: ${navigator.hardwareConcurrency}
+├── Memory: ${memory ? `${(memory.usedJSHeapSize / 1024 / 1024).toFixed(1)}MB / ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(1)}MB` : 'N/A'}
+├── Screen: ${screen.width}x${screen.height}
+└── Color Depth: ${screen.colorDepth} bit
+        `;
+      },
+
+      network_info: () => `
+Network Information:
+├── Online: ${navigator.onLine ? 'Yes' : 'No'}
+├── Connection Type: ${navigator.connection ? navigator.connection.effectiveType : 'N/A'}
+├── Downlink: ${navigator.connection ? `${navigator.connection.downlink} Mbps` : 'N/A'}
+└── RTT: ${navigator.connection ? `${navigator.connection.rtt} ms` : 'N/A'}
+      `,
+
+      clear: () => {
+        output.innerHTML = '';
+        return '';
+      },
+
+      date: () => new Date().toString(),
+
+      echo: (args) => args.join(' ')
+    };
+
+    function print(text, className = '') {
+      const line = document.createElement('div');
+      line.className = `line ${className}`;
+      line.textContent = text;
+      output.appendChild(line);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function executeCommand(input) {
+      const [cmd, ...args] = input.trim().split(' ');
+      const command = cmd.toLowerCase();
+
+      // Add command to output
+      print(`$ ${input}`, 'command-line');
+
+      // Execute command
+      if (commands[command]) {
+        const result = commands[command](args);
+        if (result) print(result);
+      } else if (command) {
+        print(`Command not found: ${command}`, 'error');
+      }
+
+      // Add to history
+      if (input.trim()) {
+        commandHistory.push(input);
+        historyIndex = commandHistory.length;
+      }
+    }
+
+    // Event listeners
+    commandInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        executeCommand(commandInput.value);
+        commandInput.value = '';
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (commandHistory.length > 0) {
+          historyIndex = Math.max(historyIndex - 1, 0);
+          commandInput.value = commandHistory[historyIndex] || '';
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (commandHistory.length > 0) {
+          historyIndex = Math.min(historyIndex + 1, commandHistory.length);
+          commandInput.value = commandHistory[historyIndex] || '';
+        }
+      }
+    });
+
+    // Focus input on load and click
+    commandInput.focus();
+    document.addEventListener('click', () => commandInput.focus());
+
+    // Welcome message
+    print('System terminal ready. Type "help" to begin.', 'info');
+  </script>
+</body>
+</html>
