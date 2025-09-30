@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Miku Search Pro</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --background: #0f172a;
+      --surface: #1e293b;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --accent: #8b5cf6;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--background);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      padding: 3rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(45deg, #fff, #e0f2fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 2rem;
+    }
+
+    .search-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    #query {
+      flex: 1;
+      padding: 1rem 1.5rem;
+      border: none;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: var(--text-primary);
+      font-size: 1rem;
+      outline: none;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    #query:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+
+    #search-button {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 50px;
+      background: var(--primary);
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 120px;
+    }
+
+    #search-button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .quick-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 2rem;
+    }
+
+    .quick-link {
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      color: var(--text-primary);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .quick-link:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .main-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    #results-info {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    #results {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .result-item {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #334155;
+      transition: all 0.3s ease;
+    }
+
+    .result-item:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .result-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      text-decoration: none;
+      display: block;
+    }
+
+    .result-title:hover {
+      text-decoration: underline;
+    }
+
+    .result-url {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      word-break: break-all;
+    }
+
+    .result-snippet {
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #334155;
+      border-left: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #dc2626;
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-content">
+      <h1>Miku Search Pro</h1>
+      <div class="subtitle">Intelligent search powered by advanced algorithms</div>
+      <div class="search-container">
+        <div class="search-box">
+          <input type="text" id="query" placeholder="Enter your search query...">
+          <button id="search-button" onclick="performSearch()">Search</button>
+        </div>
+        <div class="quick-links">
+          <a href="https://www.youtube.com" class="quick-link" target="_blank">YouTube</a>
+          <a href="https://www.github.com" class="quick-link" target="_blank">GitHub</a>
+          <a href="https://www.stackoverflow.com" class="quick-link" target="_blank">Stack Overflow</a>
+          <a href="https://www.reddit.com" class="quick-link" target="_blank">Reddit</a>
+          <a href="https://www.twitter.com" class="quick-link" target="_blank">Twitter</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="results-header">
+      <div id="results-info"></div>
+    </div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const queryInput = document.getElementById("query");
+    const resultsDiv = document.getElementById("results");
+    const resultsInfo = document.getElementById("results-info");
+
+    // Check if there's a search query in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialQuery = urlParams.get('q');
+    if (initialQuery) {
+      queryInput.value = initialQuery;
+      performSearch();
+    }
+
+    // Focus search input on load
+    queryInput.focus();
+
+    async function performSearch() {
+      const query = queryInput.value.trim();
+      if (!query) return;
+
+      // Update URL without page reload
+      const newUrl = window.location.pathname + (query ? `?q=${encodeURIComponent(query)}` : '');
+      window.history.replaceState({}, '', newUrl);
+
+      // Show loading state
+      resultsDiv.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <div>Searching for "${query}"...</div>
+        </div>
+      `;
+      resultsInfo.textContent = "";
+
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/search?q=${encodeURIComponent(query)}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        displayResults(data, query);
+
+      } catch (error) {
+        console.error("Search error:", error);
+        resultsDiv.innerHTML = `
+          <div class="error">
+            <h3>Search Error</h3>
+            <p>Unable to perform search. Please check if the proxy server is running.</p>
+            <small>Error details: ${error.message}</small>
+          </div>
+        `;
+        resultsInfo.textContent = "Search failed";
+      }
+    }
+
+    function displayResults(data, query) {
+      resultsDiv.innerHTML = "";
+      
+      if (data.error) {
+        resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+        resultsInfo.textContent = "No results found";
+        return;
+      }
+
+      const source = data.source;
+      const results = data.data;
+      let resultCount = 0;
+
+      if (source === "ddg") {
+        // Process DuckDuckGo results
+        if (results.RelatedTopics && results.RelatedTopics.length > 0) {
+          results.RelatedTopics.forEach(item => {
+            if (item.Text && item.FirstURL) {
+              createResultItem(item.Text, item.FirstURL, "", item.FirstURL);
+              resultCount++;
+            }
+          });
+        }
+
+        // Add abstract if available
+        if (results.AbstractText && results.AbstractURL) {
+          createResultItem(results.Heading || "Result", results.AbstractURL, results.AbstractText, results.AbstractURL);
+          resultCount++;
+        }
+
+      } else if (source === "google" && results.items) {
+        // Process Google results
+        results.items.forEach(item => {
+          createResultItem(item.title, item.link, item.snippet, item.link);
+          resultCount++;
+        });
+      }
+
+      if (resultCount === 0) {
+        resultsDiv.innerHTML = `
+          <div class="empty-state">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+            </svg>
+            <h3>No results found</h3>
+            <p>Try different keywords or check your spelling</p>
+          </div>
+        `;
+      }
+
+      resultsInfo.textContent = `Found ${resultCount} results in ${data.query_time || 'unknown time'}`;
+    }
+
+    function createResultItem(title, url, snippet, link) {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = "result-item";
+      
+      // Ensure link is absolute and doesn't contain MikuBrowser path
+      let cleanLink = link;
+      if (cleanLink.includes('/MikuBrowser')) {
+        cleanLink = cleanLink.replace(/.*?\/MikuBrowser/, '');
+      }
+      if (!cleanLink.startsWith('http')) {
+        cleanLink = 'https://' + cleanLink;
+      }
+      
+      itemDiv.innerHTML = `
+        <a href="${cleanLink}" class="result-title" onclick="handleLinkClick('${cleanLink}')">${title}</a>
+        <div class="result-url">${url}</div>
+        <div class="result-snippet">${snippet || "No description available"}</div>
+      `;
+      
+      resultsDiv.appendChild(itemDiv);
+    }
+
+    function handleLinkClick(url) {
+      // This function will be called by the PyQt browser to handle navigation
+      console.log("Link clicked:", url);
+      // The actual navigation is handled by the browser through the LinkHandlerPage
+    }
+
+    // Enter key support
+    queryInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") performSearch();
+    });
+  </script>
+</bod
